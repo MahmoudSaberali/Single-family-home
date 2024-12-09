@@ -1,0 +1,61 @@
+import polars as pl
+
+# Configure Polars to display wide tables and rows in the console
+pl.Config.set_tbl_cols(1000)  # Set the maximum number of columns to display
+pl.Config.set_tbl_rows(100000)  # Set the maximum number of rows to display
+pl.Config.set_tbl_width_chars(10000)  # Increase total table width
+
+# Define file path for the single home dataset
+single_home_path = r"E:\single family home\City_Zhvi_SingleFamilyResidence.csv (1)\City_Zhvi_SingleFamilyResidence.csv"
+
+# Read the dataset and drop rows with null values
+home_dataset = pl.read_csv(single_home_path).drop_nulls()
+
+# Reshape the dataset from wide to long format
+long_data = home_dataset.melt(
+    id_vars=["State", "Abbreviation", "Metro", "CountyName"],
+    variable_name="Date",
+    value_name="Price"
+)
+
+# Parse and extract date-related information
+long_data = long_data.with_columns(
+    pl.col("Date").str.strptime(pl.Date, "%Y-%m", strict=False).alias("Date")
+)
+long_data = long_data.with_columns(pl.col("Date").dt.year().alias("Year"))
+long_data = long_data.sort(by="State")
+
+# Initialize a list to store percentage changes in prices
+list_of_price_change = []
+
+# Calculate percentage price changes for each state
+for state_ in long_data["State"].unique().sort():
+    print(state_)
+    state_subset = long_data.filter(pl.col("State") == state_)
+    state_prices = state_subset.select("Price").to_numpy().tolist()
+
+    first_price = state_prices[0][0]  # Reference price for percentage change
+    state_price_changes = []
+
+    for i in range(len(state_prices)):
+        current_price = state_prices[i][0]
+
+        if i == 0:
+            state_price_changes.append(0.0)  # First row starts at 0
+        else:
+            if current_price != first_price:
+                percentage_change = ((current_price - first_price) / first_price) * 100
+                state_price_changes.append(percentage_change)
+            else:
+                state_price_changes.append(0.0)
+
+    list_of_price_change.extend(state_price_changes)
+    print(list_of_price_change)
+
+# Add the calculated percentage changes as a new column
+new_df = pl.Series("Difference in Price", list_of_price_change)
+long_data = long_data.with_columns(new_df)
+
+# Save the transformed dataset to a new file
+long_data.write_csv(r"E:\single family home\City_Zhvi_SingleFamilyResidence.csv (1)\smal.csv")
+
