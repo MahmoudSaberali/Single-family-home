@@ -1,0 +1,22 @@
+import polars as pl
+
+# Configure Polars to display wide tables in the console
+pl.Config.set_tbl_cols(1000)  # Set the maximum number of columns to display
+pl.Config.set_tbl_width_chars(10000)  # Increase total table width
+
+# Define file paths
+single_home_path = r"E:\single family home\City_Zhvi_SingleFamilyResidence.csv (1)\City_Zhvi_SingleFamilyResidence.csv"
+abbreviation_path = r"E:\single family home\usa-state-abbreviations.txt"
+
+# Read the single family home data
+single_home = pl.read_csv(single_home_path)
+print(single_home.sample())  # Display a random sample of the data
+
+# Read the state abbreviation data
+state_abbreviation = pl.read_csv(abbreviation_path)
+
+# Perform a join operation between the state abbreviations and the single family home data
+last_df = state_abbreviation.join(single_home, left_on="Abbreviation", right_on="State")
+
+# Save the resulting DataFrame back to the original file path
+last_df.write_csv(single_home_path)
