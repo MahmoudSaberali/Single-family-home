@@ -1,0 +1,15 @@
+# Define the file path
+path = r"E:\single family home\City_Zhvi_SingleFamilyResidence.csv (1)\City_Zhvi_SingleFamilyResidence.csv"
+
+# Step 1: Read the original file with latin1 encoding
+with open(path, 'r', encoding='latin1') as file:
+    content = file.read()
+
+# Step 2: Encode the content as UTF-8
+content_utf8 = content.encode('utf-8')
+
+# Step 3: Write the new file with UTF-8 encoding
+with open(path, 'wb') as file:
+    file.write(content_utf8)
+
+print("File has been converted to UTF-8 successfully!")
